@@ -22,19 +22,20 @@
 
     var SHIP_SIZE = 20;
     var SHIP_SPEED = 5;
-    var MISSILE_SPEED = SHIP_SPEED * 2;
+    var MISSILE_SPEED = SHIP_SPEED * 1.5;
     var BACKGROUND_SPEED = 12;
     var STAR_NUMBER = 20;
-    var MISSILE_NUMBER = 50;
+    var MISSILE_NUMBER = 5;
     
     var ASTEROID_MAX_SIZE = 20;
     var ASTEROID_MIN_SIZE = 5;
-    var ASTEROIDS_NUMBER = 5;
-    var ASTEROID_MIN_SPEED = 10;
+    var ASTEROIDS_NUMBER = 25;
+    var ASTEROID_MIN_SPEED = 15;
     var ASTEROID_MAX_SPEED = 20;
     var ASTEROID_ROTATION_SPEED = 20;
 
-    var paper = Raphael(document.getElementById('canvas'), SCREEN_WIDTH, SCREEN_HEIGHT);
+    var paper = Raphael(document.getElementById('canvas'), 
+        SCREEN_WIDTH, SCREEN_HEIGHT);
     
     var DOWN = 1 << 0;
     var UP = 1 << 1;
@@ -42,12 +43,23 @@
     var RIGHT = 1 << 3;
     var FIRE = 1 << 4;
 
+    var score = function () {
+        var total = 0;
+        return function (x) {
+            if (arguments.length > 0) {
+                total += x;
+                return;
+            }
+            return total;
+        }
+    }();
+
+
     var hud = function () {
         var t, d = {};
 
-        d.score = function (s) {
-            t.attr('text', 'Score: ' + s);
-        
+        d.score = function () {
+            t.attr('text', 'Score: ' + score());
         };
 
         d.startGame = function () {
@@ -125,35 +137,51 @@
     }();
 
     var asteroids = function () {
-        var free_asteroids = [];
         var asteroids = [];
         var d = {};
         
         for ( var i = 0; i < ASTEROIDS_NUMBER; i++ ) {
-            var a = paper.rect((Math.random()+1)*SCREEN_HEIGHT,
-                Math.random() * SCREEN_WIDTH,
-                Math.random() * (ASTEROID_MAX_SIZE-ASTEROID_MIN_SIZE) + ASTEROID_MIN_SIZE, 
-                Math.random() * (ASTEROID_MAX_SIZE-ASTEROID_MIN_SIZE) + ASTEROID_MIN_SIZE);
+            var width = Math.random() * (ASTEROID_MAX_SIZE-ASTEROID_MIN_SIZE) +
+                ASTEROID_MIN_SIZE;
+            var height = Math.random() * (ASTEROID_MAX_SIZE-ASTEROID_MIN_SIZE) +
+                ASTEROID_MIN_SIZE;
+            var a = /*paper.rect((Math.random()+1)*SCREEN_WIDTH,
+                Math.random() * SCREEN_HEIGHT,width, height);*/
+                paper.circle((Math.random()*0.5+1)*SCREEN_WIDTH,
+                Math.random() * SCREEN_HEIGHT, width);
             a.attr({'stroke': '#ffa', 'fill': '#333'});
-            a.rotate(Math.random() * 360)
+            //a.rotate(Math.random() * 360)
             a.hide();
-            free_asteroids.push({handle:a, 
+            asteroids.push({handle:a, 
                 speed:-(ASTEROID_MAX_SPEED-ASTEROID_MIN_SPEED) * Math.random(),
-                spin_speed: ASTEROID_ROTATION_SPEED * Math.random()});
+                //spin_speed: ASTEROID_ROTATION_SPEED * Math.random(),
+                bb: Math.max(height, width)});
         }
 
+        d.del = function (a) {
+            var y = Math.random() * (SCREEN_HEIGHT-HUD_HEIGHT) + 
+                HUD_HEIGHT;
+            a.handle.attr('cx', SCREEN_WIDTH * (1.5) );
+            a.handle.attr('cy', y);
+            a.speed = -(ASTEROID_MAX_SPEED-ASTEROID_MIN_SPEED) * Math.random();
+            //a.spin_speed = ASTEROID_ROTATION_SPEED * Math.random();
+            //a.handle.attr('rotation', 0);
+        } 
+
         d.move = function () {
-            free_asteroids.forEach( function(a) {
+            asteroids.forEach( function(a) {
                 a.handle.show();
-                a.handle.translate(a.speed, 0);
-                a.handle.rotate(a.spin_speed);
-                if ( a.handle.attr('x') < 0 ) {
-                    a.handle.attr('x', SCREEN_WIDTH);
-                    a.handle.attr('y', Math.random() * (SCREEN_HEIGHT-HUD_HEIGHT) + HUD_HEIGHT);
-                    a.speed = -(ASTEROID_MAX_SPEED-ASTEROID_MIN_SPEED) * Math.random();
-                    a.spin_speed = ASTEROID_ROTATION_SPEED * Math.random();
+                a.handle.translate(a.speed, (Math.random()-0.5) * 5);
+                //a.handle.rotate(a.spin_speed);
+                if ( a.handle.attr('cx') < 0 ) {
+                    d.del(a);
                 }
+
             });
+        };
+
+        d.asteroids = function () {
+            return asteroids;
         };
 
 
@@ -193,6 +221,48 @@
                 }
             });
         };
+        
+        d.hit = function(what) {
+            var is = function (x) {
+                var d = {};
+                
+                d.between = function(v1,v2) {
+                    return v1 < x && x < v2;
+                }
+
+                return d;
+            };
+
+            var x, y, bb = what.bb, 
+                theeta = -(what.handle.attr('rotation') % 360) * Math.PI / 180,
+                m;
+
+            
+            for ( var i = 0; i < missiles.length; i++ ) {
+                m = missiles[i];
+                /*
+                x = m.attr('cx') * Math.cos(theeta) - 
+                    m.attr('cy') * Math.sin(theeta);
+                y = m.attr('cx') * Math.sin(theeta) + 
+                    m.attr('cy') * Math.cos(theeta);
+                */
+                x = m.attr('cx');
+                y = m.attr('cy');
+                
+                if (  Math.pow(x - what.handle.attr('cx'),2) +
+                    Math.pow(y - what.handle.attr('cy'),2) < 
+                    what.bb * what.bb ) {
+                    
+                    m.hide();
+                    free_pool.push(missiles.splice(i,1)[0]);
+                    return true;
+                }
+
+            }
+
+            return false;
+            
+        };
 
         return d;
     }();
@@ -203,7 +273,10 @@
 
         spaceship.push( 
             paper.circle(14,3,0),
-            paper.path('M 0 0 L 9 3 M 0 6 L 9 3 M 0 0 L 0 6 Z')
+            paper.path('M 0 0 L 9 3 M 0 6 L 9 3 M 0 0 L 0 6 Z'),
+            paper.circle(9,3,0),
+            paper.circle(0,0,0),
+            paper.circle(0,6,0)
         );
         spaceship.translate(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
 
@@ -235,13 +308,60 @@
         };
 
 
-        d.fire = function(shouldFire) {
-            if( shouldFire & FIRE ) {
-                //TODO: Do fire!
-                missiles.launch( spaceship[0].attr('cx'), spaceship[0].attr('cy'), 2);
-                //console.log('FIRE!')
+
+        d.fire = function () {
+            var recentlyFired = false;
+            return function(shouldFire) {
+                var s;
+                if( !recentlyFired && (shouldFire & FIRE) ) {
+                    missiles.launch( spaceship[0].attr('cx'), 
+                        spaceship[0].attr('cy'), 2);
+                    recentlyFired = true;
+                    s = setTimeout(function () {
+                    recentlyFired = false;
+                },500);
+                }
             }
-        }
+        }();
+
+        d.hit = function(what) {
+            var is = function (x) {
+                var d = {};
+                
+                d.between = function(v1,v2) {
+                    return v1 < x && x < v2;
+                }
+
+                return d;
+            };
+            
+            if (
+                ( is(spaceship[2].attr('cy'))
+                .between( what.y, what.y + what.height) && 
+                
+                is(spaceship[2].attr('cx'))
+                .between( what.x, what.x + what.width) ) ||
+                
+                ( is(spaceship[3].attr('cy'))
+                .between(what.y, what.y + what.height) &&
+                
+                is(spaceship[3].attr('cx'))
+                .between( what.x, what.x + what.width) ) ||
+
+                ( is(spaceship[4].attr('cy'))
+                .between(what.y, what.y + what.height) && 
+                
+                is(spaceship[4].attr('cx'))
+                .between(what.x, what.x + what.width))
+
+                ) {
+                return true;
+            }
+
+            return false;
+
+            
+        };
 
 
         return d;
@@ -274,18 +394,28 @@
     var c = 0;
     // Game's main loop
     var mainLoop = function () {
-        background.draw();
         missiles.move();
-        ship.fire(pressed);
         ship.move(pressed);
+        asteroids.asteroids().forEach(function (a) {
+            if ( missiles.hit(a) ) {
+                asteroids.del(a); 
+                score(5);
+            }
+            if ( ship.hit(a) ) {
+            
+            }
+        });
+        ship.fire(pressed);        
         asteroids.move();
+        background.draw();
         c++;
-        if ( c % 50 == 0) {
-            hud.score(c / 50);
-            /*GAME_SPEED = GAME_SPEED / 1.04;
+        if ( c % 500 == 0) {
+            score(10);
+        /*    GAME_SPEED = GAME_SPEED / 1.5;
             clearInterval(i);
             i = setInterval(mainLoop, GAME_SPEED)*/
         }
+        hud.score();
     };
     
     var menu = function () {
