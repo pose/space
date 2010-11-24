@@ -67,7 +67,6 @@
             t.attr({'fill': 'white',  'font-size': 12});
             space.hide();
             m.hide();
-            m2.hide();
         } 
 
         var space = paper.text( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 50, 'Space') ;
@@ -75,7 +74,7 @@
             {'font-size': 30, 'font-weight': 'bold', 'font-family': 'monospace' , 
             'fill': '#fff'})
 
-        var m = paper.text( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 'Start New Game') ;
+        var m = paper.text( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 'New Game') ;
         m.node.addEventListener('click', function() {
         }, false);
 
@@ -90,19 +89,7 @@
             startGame()
         }, false);
 
-        var m2 = paper.text( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 30, 'Credits') ;
         m.attr({'font-size': 15, 'fill': '#ff0'})
-        m2.attr({'font-size': 15, 'fill': '#ff0'})
-        m2.node.addEventListener('mouseover', function() {
-            m2.attr({'fill': '#ffa'})
-        }, false);
-        m2.node.addEventListener('mouseout', function() {
-            m2.attr({'fill': '#ff0'})
-        }, false);
-        
-        m2.node.addEventListener('click', function () {
-            space.attr('text', 'Created by @thepose :)')
-        }, false);
 
         return d;
         
