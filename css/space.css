@@ -1,6 +1,7 @@
 body {
+   padding: 30px;
    background: #333;
-   height: 100%;
+   height: auto;
    margin: auto;
 }
 
