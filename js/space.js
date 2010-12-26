@@ -18,9 +18,9 @@
     var SCREEN_WIDTH = 520;
     var SCREEN_HEIGHT = 200;
 
-    var HUD_HEIGHT = 20;
+    var HUD_HEIGHT = 0;
 
-    var SHIP_SIZE = 20;
+    var SHIP_SIZE = 5;
     var SHIP_SPEED = 5;
     var MISSILE_SPEED = SHIP_SPEED * 1.5;
     var BACKGROUND_SPEED = 12;
@@ -75,8 +75,8 @@
             'fill': '#fff'})
 
         var m = paper.text( SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 'New Game') ;
-        m.node.addEventListener('click', function() {
-        }, false);
+
+        m.node.addEventListener('click', function() { }, false);
 
         m.node.addEventListener('mouseover', function() {
             m.attr({'fill': '#ffa'})
@@ -92,7 +92,6 @@
         m.attr({'font-size': 15, 'fill': '#ff0'})
 
         return d;
-        
     }();
 
     var background = function () {
@@ -227,12 +226,6 @@
             
             for ( var i = 0; i < missiles.length; i++ ) {
                 m = missiles[i];
-                /*
-                x = m.attr('cx') * Math.cos(theeta) - 
-                    m.attr('cy') * Math.sin(theeta);
-                y = m.attr('cx') * Math.sin(theeta) + 
-                    m.attr('cy') * Math.cos(theeta);
-                */
                 x = m.attr('cx');
                 y = m.attr('cy');
                 
@@ -287,7 +280,8 @@
                 where  &= ~UP;
             }
 
-            /* *2 to give the sensation that we are moving faster than the background */
+            /* *2 to give the sensation that we are moving faster than 
+             * the background */
             spaceship.translate(
                 (((where & RIGHT)>>3) - ((where & LEFT)>>2)*2) * SHIP_SPEED,            
                 ((where & DOWN) - ((where & UP) >> 1)) * SHIP_SPEED
@@ -347,9 +341,7 @@
 
             return false;
 
-            
         };
-
 
         return d;
     };
@@ -359,19 +351,14 @@
     var keys = {'40': DOWN, '37': LEFT, '39': RIGHT, '38': UP, '32': FIRE};
     var pressed = 0;
 
-
-
     // XXX document.body.addEventListener not working in ff
     document.addEventListener('keydown', function (event) {
-        //console.log('down' + event.keyCode);
         if (event.keyCode in keys) {
             pressed |= keys[event.keyCode];
-            //console.log(pressed)
         }
     }, true);
     
     document.addEventListener('keyup', function (event) {
-        //console.log('up' + event.keyCode);
         if (event.keyCode in keys) {
             pressed &= ~keys[event.keyCode];
         }
